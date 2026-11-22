@@ -12,18 +12,30 @@ Four neural operator surrogates predict the transient velocity and pressure fiel
 ## Repository structure
 
 ```
-unstructured/
-├── arguments_node_based.py           # configuration
+l_deeponet/                           # multi-scale L-DeepONet with the MLP-based AE and the CAE
+├── arguments_node_based.py           # configuration (unstructured mesh)
+├── arguments_structure.py            # configuration (structured grid)
+├── arguments_structure_vel.py        # configuration imported by utils.py
+├── arguments_structure_press.py      # configuration imported by utils.py
+├── utils.py                          # data loading and normalization
 ├── ae_utils_gpu.py                   # MLP-based autoencoder (class MLAE)
-└── deeponet_utils_gpu.py             # multi-scale DeepONet (class DeepONet_Model_multiscale_custom)
-structured/
-├── arguments_structure.py            # configuration
+├── deeponet_utils_gpu.py             # multi-scale DeepONet for the MLP-based AE (class DeepONet_Model_multiscale_custom)
 ├── convAE.py                         # convolutional autoencoder (class convAE_HCSG)
-├── deeponet_utils_gpu_structure.py   # multi-scale DeepONet (class DeepONet_multiscale_HCSG)
-└── soap.py                           # SOAP optimizer imported by deeponet_utils_gpu_structure.py
+├── deeponet_utils_gpu_structure.py   # multi-scale DeepONet for the CAE (class DeepONet_multiscale_HCSG)
+├── soap.py                           # SOAP optimizer imported by deeponet_utils_gpu_structure.py
+├── main_AE_gpu_diff.py               # training of the MLP-based AE
+├── main_DON_gpu_diff.py              # training of the multi-scale L-DeepONet with the MLP-based AE
+├── prediction_don_gpu_diff.py        # prediction with the MLP-based AE L-DeepONet
+├── main_convAE.py                    # training of the CAE
+├── main_DON_structure.py             # training of the multi-scale L-DeepONet with the CAE
+└── prediction_don_structure.py       # prediction with the CAE L-DeepONet
 fno/
-├── fno_trainer.py                    # FNO (neuraloperator) and its hyperparameters
-└── msFNO/msfno.py                    # MscaleFNO (class MultiScaleFNO2d) and its configuration
+├── fno_trainer.py                    # FNO (neuraloperator), its hyperparameters and training
+├── dataset.py                        # dataset class for the FNO
+├── utils.py                          # normalization utilities for the FNO
+└── msFNO/
+    ├── msfno.py                      # MscaleFNO (class MultiScaleFNO2d), its configuration and training
+    └── predict.py                    # prediction with the MscaleFNO
 requirements.txt
 ```
 
@@ -37,30 +49,6 @@ The code was tested with Python 3.10.
 ```bash
 pip install -r requirements.txt
 ```
-
-## Data
-
-The preprocessed datasets used to train and test the surrogate models are available at: (Google Drive link)
-
-```
-data/
-├── training_data_don_fluent/   # unstructured mesh (MLP-AE L-DeepONet)
-└── scale_3x/                   # structured grid obtained by IDW interpolation (CAE L-DeepONet, FNO, MscaleFNO)
-```
-
-Each `.npz` file contains the following arrays.
-
-| Key | Unstructured | Structured | Description |
-|---|---|---|---|
-| `inputs` | (N, 28877) | (N, 756, 282) | initial field u0 |
-| `outputs` | (N, 100, 28877) | (N, 100, 756, 282) | temporal difference field at 100 time steps |
-| `x_coords`, `y_coords` | (28877,), (28877,) | (756,), (282,) | node or grid coordinates |
-| `nan_mask` | – | (756, 282) | grid points inside the tubes |
-
-- `press` and `vel` denote the pressure and the velocity magnitude.
-- `outputs` stores the temporal difference field Δu(x, t) = u(x, t) − u0(x). The full field is recovered by adding `inputs` (u0) to `outputs`.
-- `ic010_to_060_except040` contains 50 inlet velocities from 0.10 to 0.60 m/s except 0.40 m/s (training and validation).
-- `ic040`, `ic0455`, `ic070`, `ic075`, and `ic080` are the test inlet velocities of 0.40 and 0.455 m/s (interpolation) and 0.70, 0.75, and 0.80 m/s (extrapolation).
 
 ## License
 
