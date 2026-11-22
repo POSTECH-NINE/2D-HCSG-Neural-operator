@@ -1,0 +1,8 @@
+tensorflow==2.19.0
+keras==3.10.0
+tf-siren==0.0.5
+torch==2.10.0
+neuraloperator==2.0.0
+numpy==1.26.0
+pandas==2.2.3
+tqdm==4.67.1
